@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ANSH Editing — Booking App</title>
+<style>
+  :root{
+    --bg: linear-gradient(120deg, #0f172a 0%, #07103a 100%);
+    --card: rgba(255,255,255,0.06);
+    --accent: #00d4ff; /* cyan */
+    --accent-2: #7b61ff; /* violet */
+    --muted: rgba(255,255,255,0.75);
+    --glass: rgba(255,255,255,0.04);
+    --success: #2dd4bf;
+    --danger: #ff6b6b;
+    --max-width: 1100px;
+    --no-pink: 1;
+  }
+  *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+  html,body{height:100%;margin:0;background:var(--bg);color:#e6eef8}
+  .wrap{max-width:var(--max-width);margin:28px auto;padding:20px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+  .logo{display:flex;align-items:center;gap:12px}
+  .logo .mark{width:52px;height:52px;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;font-weight:700;color:#061328;box-shadow:0 6px 20px rgba(0,0,0,0.5)}
+  .logo h1{margin:0;font-size:18px;letter-spacing:0.4px}
+  .role-badge{padding:8px 12px;border-radius:999px;background:var(--glass);color:var(--muted);font-weight:600}
+  main{display:grid;grid-template-columns:1fr 360px;gap:18px}
+  /* left */
+  .panel{background:var(--card);border-radius:14px;padding:18px;backdrop-filter: blur(6px);box-shadow:0 6px 30px rgba(2,6,23,0.6)}
+  .services{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .service{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);transition:transform .18s ease, box-shadow .18s}
+  .service:hover{transform:translateY(-6px);box-shadow:0 20px 40px rgba(2,6,23,0.6)}
+  .svc-head{display:flex;align-items:center;justify-content:space-between}
+  .svc-title{font-weight:700;font-size:15px}
+  .price{font-weight:800;color:var(--accent)}
+  .opts{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+  .opt{padding:8px 10px;border-radius:8px;background:var(--glass);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
+  button.cta{background:linear-gradient(90deg,var(--accent),var(--accent-2));border:none;color:#041028;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.45);transition:transform .12s}
+  button.cta:active{transform:translateY(2px)}
+  /* right */
+  .sidebar{position:sticky;top:22px}
+  .card-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .small{font-size:13px;color:var(--muted)}
+  .inbox{max-height:320px;overflow:auto;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent)}
+  .msg{padding:10px;border-radius:10px;margin-bottom:10px;background:rgba(255,255,255,0.03);display:flex;gap:8px;align-items:center;justify-content:space-between}
+  .muted-pill{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.02);font-size:13px;color:var(--muted)}
+  /* modal */
+  .modal-back{position:fixed;inset:0;background:linear-gradient(90deg, rgba(2,6,23,0.7), rgba(4,8,20,0.85));display:flex;align-items:center;justify-content:center;z-index:9999}
+  .modal{width:92%;max-width:480px;background:linear-gradient(180deg,#041229, #07163a);padding:22px;border-radius:14px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 18px 50px rgba(2,6,23,0.8)}
+  .modal h2{margin:0 0 8px 0}
+  .input{display:block;width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:inherit;margin-bottom:10px}
+  .muted{color:var(--muted);font-size:14px}
+  /* toast */
+  .toast{position:fixed;right:22px;bottom:22px;background:rgba(0,0,0,0.6);padding:10px 14px;border-radius:10px;color:#fff;box-shadow:0 8px 28px rgba(2,6,23,0.6)}
+  /* dashboard */
+  .dash-list{display:flex;flex-direction:column;gap:10px}
+  .sub-card{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border:1px solid rgba(255,255,255,0.02)}
+  .badge{padding:6px 8px;border-radius:8px;font-weight:700}
+  .btn-small{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.02);cursor:pointer}
+  footer{margin-top:24px;color:var(--muted);font-size:13px;text-align:center}
+  @media (max-width:900px){main{grid-template-columns:1fr}}
+  /* subtle animations */
+  .pulse{animation: pulse 3s ease-in-out infinite}
+  @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <div class="mark">AE</div>
+      <div>
+        <h1>ANSH Editing</h1>
+        <div class="small">Photo • Video • Reels — Book edits fast</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <div id="roleBadge" class="role-badge">Checking...</div>
+      <div style="display:flex;gap:8px">
+        <button id="openInboxBtn" class="btn-small">Developer Inbox</button>
+        <button id="openDashboardBtn" class="btn-small">My Dashboard</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <!-- Services -->
+      <div class="panel">
+        <div class="card-title"><div><strong>Services</strong><div class="small">Pick a type to reveal options</div></div><div class="muted">Coupon for Bookings: <span style="font-weight:800">ANSHKING</span></div></div>
+        <div class="services">
+          <div class="service">
+            <div class="svc-head"><div class="svc-title">Photo Editing</div><div class="price">Normal 90 / Pro 120</div></div>
+            <div class="opts">
+              <div class="opt" onclick="selectService('Photo','Normal',90)">Normal - 90</div>
+              <div class="opt" onclick="selectService('Photo','Pro',120)">Pro - 120</div>
+              <div class="opt" onclick="openBook('Photo','Normal',90)"><button class="cta">Book Now</button></div>
+            </div>
+          </div>
+
+          <div class="service">
+            <div class="svc-head"><div class="svc-title">Video Editing</div><div class="price">Normal 140 / Pro 160</div></div>
+            <div class="opts">
+              <div class="opt" onclick="selectService('Video','Normal',140)">Normal - 140</div>
+              <div class="opt" onclick="selectService('Video','Pro',160)">Pro - 160</div>
+              <div class="opt" onclick="openBook('Video','Normal',140)"><button class="cta">Book Now</button></div>
+            </div>
+          </div>
+
+          <div class="service">
+            <div class="svc-head"><div class="svc-title">Reels Editing</div><div class="price">Normal 150 / Pro 200</div></div>
+            <div class="opts">
+              <div class="opt" onclick="selectService('Reel','Normal',150)">Normal - 150</div>
+              <div class="opt" onclick="selectService('Reel','Pro',200)">Pro - 200</div>
+              <div class="opt" onclick="openBook('Reel','Normal',150)"><button class="cta">Book Now</button></div>
+            </div>
+          </div>
+
+          <div class="service">
+            <div class="svc-head"><div class="svc-title">Subscriptions</div><div class="price">Flexible Plans</div></div>
+            <div class="opts">
+              <div class="opt" onclick="openSub('1 Month',1000,30,50)">1 Month — 1000 rs (50)</div>
+              <div class="opt" onclick="openSub('5 Months',5000,150,250)">5 Months — 5000 rs (250)</div>
+              <div class="opt" onclick="openSub('1 Year',10000,365,600)">1 Year — 10000 rs (600)</div>
+              <div class="opt" onclick="openSub('1 Week',250,7,10)">Weekly — 250 rs (10)</div>
+            </div>
+          </div>
+        </div>
+
+        <hr style="border:none;height:1px;background:rgba(255,255,255,0.03);margin:18px 0">
+        <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-weight:800">Quick actions</div>
+            <div class="small">Click to simulate flows</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-small" onclick="simulateRandomBooking()">Simulate Random Booking</button>
+            <button class="btn-small" onclick="clearLocal()">Reset Local Data</button>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+        Tip: first-time code is required just once. Use <strong>FXANSH</strong> (normal) or <strong>FXANSHPRO</strong> (developer).
+      </footer>
+    </section>
+
+    <aside class="sidebar">
+      <div class="panel">
+        <div class="card-title"><strong>Developer Inbox</strong><div class="small">Messages for developer</div></div>
+        <div id="inbox" class="inbox"></div>
+        <div style="margin-top:8px;display:flex;gap:8px;justify-content:space-between">
+          <div class="small muted">Only appears if someone books / subscribes</div>
+          <div><button class="btn-small" onclick="openInbox()">Open</button></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:12px">
+        <div class="card-title"><strong>My Dashboard</strong><div class="small">Bookings & Subscriptions</div></div>
+        <div id="dashboard" class="dash-list"></div>
+        <div style="margin-top:10px;display:flex;gap:8px;justify-content:space-between;align-items:center">
+          <div class="small muted">Status updates appear here</div>
+          <div><button class="btn-small" onclick="refreshUI()">Refresh</button></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<!-- Modals -->
+<div id="codeModal" class="modal-back" style="display:none">
+  <div class="modal">
+    <h2>Enter Access Code</h2>
+    <div class="muted">This site asks for a one-time code when first opened. Enter <strong>FXANSH</strong> for normal user or <strong>FXANSHPRO</strong> for developer access.</div>
+    <input id="codeInput" class="input" placeholder="Enter code" />
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-small" onclick="submitCode()">Submit</button>
+    </div>
+    <div id="codeError" class="muted" style="color:var(--danger);display:none;margin-top:8px"></div>
+  </div>
+</div>
+
+<div id="bookModal" class="modal-back" style="display:none">
+  <div class="modal">
+    <h2 id="bookTitle">Book</h2>
+    <div class="muted" id="bookDesc">Details</div>
+    <div style="margin-top:10px">
+      <label class="small">Your Name</label>
+      <input id="customerName" class="input" placeholder="Name or handle" />
+      <label class="small">Contact (WhatsApp / Phone / Email)</label>
+      <input id="customerContact" class="input" placeholder="Contact" />
+      <label class="small">Coupon (optional)</label>
+      <input id="couponInput" class="input" placeholder="Enter coupon — ANSHKING" />
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-small" onclick="closeBook()">Cancel</button>
+        <button class="cta" onclick="confirmBooking()">Confirm Booking</button>
+      </div>
+    </div>
+    <div id="bookError" class="muted" style="color:var(--danger);display:none;margin-top:8px"></div>
+  </div>
+</div>
+
+<div id="subModal" class="modal-back" style="display:none">
+  <div class="modal">
+    <h2 id="subTitle">Buy Subscription</h2>
+    <div class="muted" id="subDesc">sub details</div>
+    <div style="margin-top:10px">
+      <label class="small">Name</label>
+      <input id="subName" class="input" placeholder="Name" />
+      <label class="small">Contact</label>
+      <input id="subContact" class="input" placeholder="Contact" />
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-small" onclick="closeSub()">Cancel</button>
+        <button class="cta" onclick="confirmSubscription()">Buy (Request Approval)</button>
+      </div>
+    </div>
+    <div id="subError" class="muted" style="color:var(--danger);display:none;margin-top:8px"></div>
+  </div>
+</div>
+
+<div id="toastArea"></div>
+
+<script>
+/*
+  ANSH Editing — Single-file app
+  - First-run code prompt: FXANSH (normal), FXANSHPRO (developer)
+  - Booking sends messages to developer inbox (localStorage)
+  - Developer can Approve bookings/subscriptions
+  - Subscription activation shows expiry date in user dashboard after approval
+  - Coupon: "ANSHKING" gives 10% off (adjustable below)
+*/
+
+/* ======= Config ======= */
+const CONFIG = {
+  codes: {
+    normal: 'FXANSH',
+    dev: 'FXANSHPRO'
+  },
+  couponCode: 'ANSHKING',
+  couponDiscountPercent: 10, // ANSHKING gives 10% off on bookings (changeable)
+  askCodeOnlyOnce: true // will store code in localStorage so user is asked only once
+};
+
+/* ======= Utilities ======= */
+function $(id){return document.getElementById(id)}
+function toast(msg, timeout=3000){const t = document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),timeout)}
+function clamp(n){return Math.round(n*100)/100}
+
+/* ======= localStorage helpers ======= */
+function getLS(key, fallback=null){try{return JSON.parse(localStorage.getItem(key)) ?? fallback}catch(e){return fallback}}
+function setLS(key,val){localStorage.setItem(key,JSON.stringify(val))}
+
+/* ======= App state ======= */
+let app = {
+  role: null, // 'guest' | 'normal' | 'developer'
+  currentSelection: null // object {type,level,price}
+}
+
+/* ======= Initialization ======= */
+function init(){
+  // check code entered
+  const storedRole = getLS('ansh_role', null)
+  if(storedRole){
+    app.role = storedRole
+    $('roleBadge').textContent = (app.role === 'developer') ? 'Developer' : 'Normal user'
+  } else {
+    // show code modal
+    showCodeModal()
+  }
+  refreshUI()
+  // wire buttons
+  $('openInboxBtn').onclick = openInbox
+  $('openDashboardBtn').onclick = openDashboard
+}
+
+/* ======= Code modal ======= */
+function showCodeModal(){
+  $('codeModal').style.display = 'flex'
+  $('codeInput').value = ''
+  $('codeError').style.display = 'none'
+  setTimeout(()=>$('codeInput').focus(),200)
+}
+function submitCode(){
+  const v = $('codeInput').value.trim()
+  if(!v){$('codeError').textContent='Please enter a code';$('codeError').style.display='block';return}
+  if(v === CONFIG.codes.normal){
+    app.role = 'normal'
+  } else if(v === CONFIG.codes.dev){
+    app.role = 'developer'
+  } else {
+    $('codeError').textContent='Invalid code — please enter FXANSH or FXANSHPRO';$('codeError').style.display='block';return
+  }
+  setLS('ansh_role', app.role)
+  $('codeModal').style.display = 'none'
+  $('roleBadge').textContent = (app.role === 'developer') ? 'Developer' : 'Normal user'
+  toast('Access granted — ' + (app.role === 'developer' ? 'Developer' : 'Normal user'))
+  refreshUI()
+}
+
+/* ======= Service selection & booking ======= */
+function selectService(type, level, price){
+  app.currentSelection = {type, level, price}
+  toast(`${type} (${level}) selected — Rs ${price}`)
+}
+function openBook(type, level, price){
+  app.currentSelection = {type, level, price}
+  $('bookTitle').textContent = `Book ${type} — ${level} (Rs ${price})`
+  $('bookDesc').textContent = 'Fill your contact details. Use coupon ANSHKING at checkout.'
+  $('customerName').value = ''
+  $('customerContact').value = ''
+  $('couponInput').value = CONFIG.couponCode
+  $('bookError').style.display = 'none'
+  $('bookModal').style.display = 'flex'
+}
+function closeBook(){ $('bookModal').style.display = 'none' }
+function confirmBooking(){
+  const name = $('customerName').value.trim()
+  const contact = $('customerContact').value.trim()
+  const coupon = $('couponInput').value.trim()
+  if(!app.currentSelection) { $('bookError').textContent='No service selected'; $('bookError').style.display='block'; return }
+  if(!name || !contact){ $('bookError').textContent='Please provide your name and contact'; $('bookError').style.display='block'; return }
+  let price = app.currentSelection.price
+  let couponApplied = false
+  if(coupon && coupon.toUpperCase() === CONFIG.couponCode.toUpperCase()){
+    couponApplied = true
+    price = clamp(price * (1 - CONFIG.couponDiscountPercent/100))
+  }
+  // create booking object
+  const booking = {
+    id: 'B'+Date.now(),
+    service: app.currentSelection,
+    name, contact, coupon: coupon ? coupon.toUpperCase() : null,
+    couponApplied, price,
+    status: 'pending', // pending, approved, completed
+    createdAt: new Date().toISOString()
+  }
+  // push to bookings list
+  const bookings = getLS('ansh_bookings', [])
+  bookings.push(booking)
+  setLS('ansh_bookings', bookings)
+  // send message to developer inbox
+  const inbox = getLS('ansh_dev_inbox', [])
+  inbox.unshift({type:'booking', id:booking.id, title:`Booking: ${booking.service.type} ${booking.service.level}`, detail:booking, at:new Date().toISOString()})
+  setLS('ansh_dev_inbox', inbox)
+  $('bookModal').style.display = 'none'
+  toast('Booking sent — developer will receive a message')
+  refreshUI()
+}
+
+/* ======= Subscriptions ======= */
+function openSub(name,price,days,credits){
+  $('subTitle').textContent = `Subscribe: ${name} — Rs ${price}`
+  $('subDesc').textContent = `Credits: ${credits} — Duration: ${days} day(s)`
+  $('subName').value = ''
+  $('subContact').value = ''
+  $('subError').style.display = 'none'
+  $('subModal').style.display = 'flex'
+  $('subModal').dataset.price = price
+  $('subModal').dataset.name = name
+  $('subModal').dataset.days = days
+  $('subModal').dataset.credits = credits
+}
+function closeSub(){ $('subModal').style.display = 'none' }
+function confirmSubscription(){
+  const name = $('subName').value.trim()
+  const contact = $('subContact').value.trim()
+  if(!name || !contact){ $('subError').textContent='Please provide name & contact'; $('subError').style.display='block'; return }
+  const price = Number($('subModal').dataset.price)
+  const days = Number($('subModal').dataset.days)
+  const credits = Number($('subModal').dataset.credits)
+  const sub = {
+    id:'S'+Date.now(),
+    plan: $('subModal').dataset.name,
+    price, days, credits,
+    name, contact,
+    status:'pending', // pending -> active when developer approves
+    createdAt: new Date().toISOString()
+  }
+  const subs = getLS('ansh_subscriptions', [])
+  subs.push(sub)
+  setLS('ansh_subscriptions', subs)
+  // notify developer
+  const inbox = getLS('ansh_dev_inbox', [])
+  inbox.unshift({type:'subscription', id:sub.id, title:`Subscription request: ${sub.plan}`, detail:sub, at:new Date().toISOString()})
+  setLS('ansh_dev_inbox', inbox)
+  $('subModal').style.display = 'none'
+  toast('Subscription request sent — waiting approval by developer')
+  refreshUI()
+}
+
+/* ======= Developer inbox / Approve actions ======= */
+function openInbox(){
+  // open developer inbox modal-like (we'll show in the right pane)
+  // If not developer, show a message
+  const role = getLS('ansh_role', null)
+  if(role !== 'developer'){
+    // still open inbox list but as read-only
+    window.scrollTo({top:0,behavior:'smooth'})
+    toast('Inbox opened. Developer will receive messages when bookings/subscriptions arrive.')
+  }
+  // show inbox content in side panel (refreshUI handles it)
+  refreshUI()
+}
+function approveItem(item){
+  // item = {type: 'booking'|'subscription', id}
+  if(getLS('ansh_role') !== 'developer'){toast('Only developer can approve');return}
+  if(item.type === 'booking'){
+    const bookings = getLS('ansh_bookings', [])
+    const idx = bookings.findIndex(b=>b.id===item.id)
+    if(idx>=0){
+      bookings[idx].status = 'approved'
+      bookings[idx].approvedAt = new Date().toISOString()
+      setLS('ansh_bookings', bookings)
+      // update inbox: mark related message removed
+      removeInboxMessage(item.id)
+      toast('Booking approved')
+    }
+  } else if(item.type === 'subscription'){
+    const subs = getLS('ansh_subscriptions', [])
+    const idx = subs.findIndex(s=>s.id===item.id)
+    if(idx>=0){
+      subs[idx].status = 'active'
+      subs[idx].approvedAt = new Date().toISOString()
+      // compute expiry date
+      const created = new Date(subs[idx].approvedAt)
+      const expiry = new Date(created.getTime() + subs[idx].days*24*60*60*1000)
+      subs[idx].expiresAt = expiry.toISOString()
+      setLS('ansh_subscriptions', subs)
+      // also, optionally, map to a user view: store active subscription for name/contact
+      // remove inbox message
+      removeInboxMessage(item.id)
+      toast('Subscription approved and activated')
+    }
+  }
+  refreshUI()
+}
+function removeInboxMessage(relatedId){
+  let inbox = getLS('ansh_dev_inbox', [])
+  inbox = inbox.filter(m => !(m.detail && (m.detail.id === relatedId)))
+  setLS('ansh_dev_inbox', inbox)
+}
+
+/* ======= UI Refresh ======= */
+function refreshUI(){
+  // Inbox panel
+  const inbox = getLS('ansh_dev_inbox', [])
+  const inboxEl = $('inbox')
+  inboxEl.innerHTML = ''
+  if(!inbox || inbox.length===0){
+    inboxEl.innerHTML = '<div class="small muted">No messages yet</div>'
+  } else {
+    inbox.forEach(m => {
+      const el = document.createElement('div'); el.className='msg'
+      const left = document.createElement('div')
+      left.innerHTML = `<div style="font-weight:800">${m.title}</div><div class="small muted">${new Date(m.at).toLocaleString()}</div>`
+      const right = document.createElement('div')
+      if(getLS('ansh_role') === 'developer'){
+        const approveBtn = document.createElement('button'); approveBtn.className='btn-small'; approveBtn.textContent='Approve'
+        approveBtn.onclick = ()=>approveItem({type:m.type, id:m.detail.id})
+        right.appendChild(approveBtn)
+      } else {
+        right.innerHTML = `<div class="muted-pill">${m.type}</div>`
+      }
+      el.appendChild(left); el.appendChild(right); inboxEl.appendChild(el)
+    })
+  }
+
+  // Dashboard: show bookings & subscriptions relevant to user
+  const dash = $('dashboard'); dash.innerHTML = ''
+  const bookings = getLS('ansh_bookings', [])
+  const subs = getLS('ansh_subscriptions', [])
+
+  // show bookings
+  const h1 = document.createElement('div'); h1.style.fontWeight='800'; h1.style.marginBottom='8px'; h1.textContent='Bookings'
+  dash.appendChild(h1)
+  if(!bookings || bookings.length===0){
+    const c = document.createElement('div'); c.className='sub-card'; c.textContent = 'No bookings yet'
+    dash.appendChild(c)
+  } else {
+    bookings.forEach(b => {
+      const card = document.createElement('div'); card.className='sub-card'
+      card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${b.service.type} ${b.service.level}</strong><div class="small muted">Rs ${b.price}${b.couponApplied? ' (coupon applied)':''}</div></div><div style="text-align:right"><div class="small muted">${new Date(b.createdAt).toLocaleDateString()}</div><div style="margin-top:6px">${statusPill(b.status)}</div></div></div><div style="margin-top:8px" class="small">Customer: ${b.name} — ${b.contact}</div>`
+      dash.appendChild(card)
+    })
+  }
+
+  // subscriptions
+  const h2 = document.createElement('div'); h2.style.fontWeight='800'; h2.style.margin='12px 0 8px 0'; h2.textContent='Subscriptions'
+  dash.appendChild(h2)
+  if(!subs || subs.length===0){
+    const c = document.createElement('div'); c.className='sub-card'; c.textContent = 'No subscription requests'
+    dash.appendChild(c)
+  } else {
+    subs.forEach(s => {
+      const card = document.createElement('div'); card.className='sub-card'
+      let expiryText = ''
+      if(s.status === 'active' && s.expiresAt){
+        const d = new Date(s.expiresAt)
+        expiryText = `<div style="margin-top:8px;font-weight:800;color:var(--success)">YOUR SUBSCRIPTION IS EXPIRE IN (${d.toLocaleDateString()})</div>`
+      } else {
+        expiryText = `<div style="margin-top:8px" class="small muted">Status: ${s.status}</div>`
+      }
+      card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${s.plan}</strong><div class="small muted">Rs ${s.price} — ${s.credits} credits</div></div><div>${statusPill(s.status)}</div></div><div style="margin-top:8px" class="small">Name: ${s.name} — ${s.contact}</div>${expiryText}`
+      // If developer: add approve button for pending
+      if(getLS('ansh_role') === 'developer' && s.status === 'pending'){
+        const btn = document.createElement('button'); btn.className='cta'; btn.style.marginTop='8px'; btn.textContent='Approve Subscription'
+        btn.onclick = ()=>approveItem({type:'subscription', id:s.id})
+        card.appendChild(btn)
+      }
+      dash.appendChild(card)
+    })
+  }
+}
+
+/* ======= Helpers for UI ======= */
+function statusPill(status){
+  if(status === 'pending') return `<span class="badge" style="background:rgba(255,255,255,0.03);color:var(--muted)">PENDING</span>`
+  if(status === 'approved') return `<span class="badge" style="background:var(--accent);color:#041328">APPROVED</span>`
+  if(status === 'active') return `<span class="badge" style="background:var(--success);color:#042024">ACTIVE</span>`
+  if(status === 'completed') return `<span class="badge" style="background:var(--muted);color:#041328">COMPLETED</span>`
+  return `<span class="badge">${status.toUpperCase()}</span>`
+}
+
+/* ======= Simulation & Utilities ======= */
+function simulateRandomBooking(){
+  const types = [
+    {type:'Photo',level:'Normal',price:90},
+    {type:'Photo',level:'Pro',price:120},
+    {type:'Video',level:'Normal',price:140},
+    {type:'Video',level:'Pro',price:160},
+    {type:'Reel',level:'Normal',price:150},
+    {type:'Reel',level:'Pro',price:200}
+  ]
+  const pick = types[Math.floor(Math.random()*types.length)]
+  app.currentSelection = pick
+  // random name/contact
+  const n = 'User' + Math.floor(Math.random()*900+100)
+  const c = 'contact+' + Math.floor(Math.random()*9000+1000)
+  $('customerName').value = n
+  $('customerContact').value = c
+  $('couponInput').value = CONFIG.couponCode
+  openBook(pick.type, pick.level, pick.price)
+}
+
+function clearLocal(){
+  if(!confirm('Reset all local data? This clears bookings, inbox, subscriptions and role.')) return
+  localStorage.removeItem('ansh_bookings')
+  localStorage.removeItem('ansh_subscriptions')
+  localStorage.removeItem('ansh_dev_inbox')
+  localStorage.removeItem('ansh_role')
+  toast('Local data cleared — reload the page')
+  setTimeout(()=>location.reload(),800)
+}
+
+/* ======= Developer / Dashboard open helpers ======= */
+function openDashboard(){ window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}); refreshUI() }
+
+/* ======= Start app ======= */
+init()
+</script>
+</body>
+</html>
